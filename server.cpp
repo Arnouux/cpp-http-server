@@ -65,7 +65,7 @@ int main() {
             std::cout << "client accepted:" << inet_ntoa(client_addr.sin_addr) << std::endl;
             //if(std::find(addresses.begin(), addresses.end(), inet_ntoa(client_addr.sin_addr)) != addresses.end()) {
             if(addresses.size() > 2) {
-                // todo add timer per address for anti dos
+                // todo add timer per address for anti spam
                 std::cout << addresses.size() << std::endl;
             } else {
 
