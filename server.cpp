@@ -5,41 +5,43 @@
 #include <vector>
 #include <string.h>
 #include <algorithm>
+#include <fstream>
 
-const char header[] = "HTTP/1.1 200 OK\r\n"
-"Content-Length: 100\r\n" 
+std::string header = "HTTP/1.1 200 OK\r\n"
+"Content-Length: 1000\r\n" 
 "Connection: close\r\n"
 "Content-type: text/html\r\n"
 "\r\n";
 
-const char html[] = "<html>\r\n"
-"<head>\r\n"
-"<title>Hello, world!</title>\r\n"
-"</head>\r\n"
-"<body>\r\n"
-"<h1>Hello, world!</h1>\r\n"
-"</body>\r\n"
-"</html>\r\n\r\n";
+// todo content-length = file size
 
-char response[] = "HTTP/1.1 200 OK\r\n"
-"Content-Length: 100\r\n" 
-"Connection: close\r\n"
-"Content-type: text/html\r\n"
-"\r\n"
-"<html>\r\n"
-"<head>\r\n"
-"<title>Hello, world!</title>\r\n"
-"</head>\r\n"
-"<body>\r\n"
-"<h1>Hello, world!</h1>\r\n"
-"</body>\r\n"
-"</html>\r\n\r\n";
+char* getHTML() {
+    std::ifstream file("site.html");
+    std::vector<char> result;
+    std::vector<char> vec_header(header.begin(), header.end());
+    std::vector<char> vec_html;
+
+    if (!file.eof() && !file.fail()) {
+        file.seekg(0, std::ios_base::end);
+        std::streampos fileSize = file.tellg();
+        vec_html.resize(fileSize);
+
+        file.seekg(0, std::ios_base::beg);
+        file.read(&vec_html[0], fileSize);
+    }
+
+    result.insert( result.begin(), vec_header.begin(), vec_header.end() );
+    result.insert( result.end(), vec_html.begin(), vec_html.end() );
+    char* bytes = &result[0];
+    return bytes;
+}
 
 std::vector<std::string> addresses;
 
 int main() {
     std::cout << "hello" << std::endl;
 
+    // todo change if unix env (#DEFINE ?)
 	WSADATA wsa_data;
 	WSAStartup(MAKEWORD(2, 2), &wsa_data);
 
@@ -69,14 +71,36 @@ int main() {
                 std::cout << addresses.size() << std::endl;
             } else {
 
-                int val = recv(client, buf, 1024, 0);
+                int received = recv(client, buf, 1024, 0);
+                std::vector<char> data(buf, buf + 1024);
+                char *html_needed = NULL;
+                char *css_needed = NULL;
+                html_needed = strstr (buf, "text/html");
+                css_needed = strstr (buf, "image/avif");
+                if(html_needed) {
+                    char* bytes = getHTML();
+                    send(client, bytes, strlen(bytes)-1, 0);
+                    std::cout << "sent" << std::endl;
+                } else if(css_needed) {
+                    // todo CSS getters
+                    char* bytes = getHTML();
+                    send(client, bytes, strlen(bytes)-1, 0);
+                    std::cout << "sent css" << std::endl;
+                }
+                //} else if(std::find(buf.begin(), buf.end(), "image/avif")) {
+                    // read css + send
+                //} else {
+                    // std::cout << "Request not understood" << std::endl;
+                //}
                 // if Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
                 // elif Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
                 
                 addresses.push_back(inet_ntoa(client_addr.sin_addr));
 
                 // todo append header + current response
-                send(client, response, strlen(response)-1, 0);
+                char* bytes = getHTML();
+                send(client, bytes, strlen(bytes)-1, 0);
+                //send(client, response, strlen(response)-1, 0);
             }
         }
 
