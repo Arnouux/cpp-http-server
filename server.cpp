@@ -48,8 +48,10 @@ std::vector<char> getDataWithHeader(std::string path, std::string content_type) 
 }
 
 std::vector<std::string> addresses;
+int nb_visits;
 
 int main() {
+    freopen( "logs.lst", "w", stdout );
     std::cout << "hello" << std::endl;
 
     // todo change if unix env (#DEFINE ?)
@@ -107,7 +109,7 @@ int main() {
                 }
 
                 addresses.push_back(inet_ntoa(client_addr.sin_addr));
-
+                nb_visits += 1;
             }
         }
 
