@@ -13,13 +13,13 @@ std::vector<std::string> addresses;
 const char* file_visitors = "list_visitors.lst";
 const char* file_logs = "logs.lst";
 
-std::vector<char> getHeader(int size, std::string content_type) {
+std::vector<char> getHeader(int code, int size, std::string content_type) {
     char buf[1000];
     time_t now = time(0);
     struct tm tm = *gmtime(&now);
     strftime(buf, sizeof buf, "%a, %d %b %Y %H:%M:%S %Z", &tm);
 
-    std::string s = "HTTP/1.1 200 OK\r\n"
+    std::string s = "HTTP/1.1 " + std::to_string(code) + "\r\n"
 "Content-Length: " + std::to_string(size) + "\r\n" 
 "Connection: close\r\n"
 "Date: " + buf + "\r\n"
@@ -58,11 +58,11 @@ void logVisitor(std::string addr) {
     rename(("tmp_" + std::string(file_visitors)).c_str(), file_visitors);
 }
 
-std::vector<char> getDataWithHeader(std::string path, std::string content_type) {
+std::vector<char> getDataWithHeader(int code, std::string path, std::string content_type) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     std::vector<char> result;
 
-    std::vector<char> vec_header = getHeader(file.tellg(), content_type);
+    std::vector<char> vec_header = getHeader(code, file.tellg(), content_type);
     std::vector<char> vec_data;
 
     if (!file.eof() && !file.fail()) {
@@ -117,6 +117,8 @@ int main() {
 
                 int received = recv(client, buf, 1024, 0);
                 std::string data(buf, buf + 1024);
+                // todo check buf size -> 401
+
                 char *html_needed = NULL;
                 char *css_needed = NULL;
                 const std::regex reg("/imgs/[^ ]*");
@@ -126,21 +128,31 @@ int main() {
                 css_needed = strstr (buf, "text/css");
                 bool img_needed = std::regex_match(buf, reg);
                 if(html_needed) {
-                    std::vector<char> result = getDataWithHeader("site.html", "text/html");
+                    if (! strstr (buf, "GET / HTTP/1.1")) {
+                    std::vector<char> result = getDataWithHeader(404, "404.html", "text/html");
+                        send(client, &result[0], result.size(), 0);
+                        for(char c:result) {
+                            std::cout << c;
+                        }
+                        continue;
+                    }
+                    std::vector<char> result = getDataWithHeader(200, "site.html", "text/html");
                     send(client, &result[0], result.size(), 0);
                     std::cout << "sent html" << std::endl;
                     // todo log async
                     logVisitor(inet_ntoa(client_addr.sin_addr));
                 } else if(css_needed) {
                     // TODO: generalize css (as img)
-                    std::vector<char> result = getDataWithHeader("site.css", "text/css");
+                    std::vector<char> result = getDataWithHeader(200, "site.css", "text/css");
                     send(client, &result[0], result.size(), 0);
                     std::cout << "sent css" << std::endl;
                 } else if (std::regex_search(data, match, reg)) {
                     // todo make image smaller
-                    std::vector<char> result = getDataWithHeader("." + std::string(match[0]), "image/png");
+                    std::vector<char> result = getDataWithHeader(200, "." + std::string(match[0]), "image/png");
                     send(client, &result[0], result.size(), 0);
                     std::cout << "sent img" << std::endl;
+                } else {
+                    // todo 401
                 }
 
                 addresses.push_back(inet_ntoa(client_addr.sin_addr));
