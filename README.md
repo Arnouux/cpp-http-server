@@ -5,3 +5,9 @@ For a fast web server responding to simple http requests, featuring:
 - logging
 - counting visits
 - anti dos (todo)
+  
+
+For now made for windows (using wsock32)
+### How to use
+
+Compile with the command `g++ server.cpp -o server.exe -lwsock32`, place the executable on your site folder and launch it.
