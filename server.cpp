@@ -8,10 +8,18 @@
 #include <fstream>
 #include <time.h>
 #include <regex>
+#include <map>
 
 std::vector<std::string> addresses;
 const char* file_visitors = "list_visitors.lst";
 const char* file_logs = "logs.lst";
+const std::map<std::string, std::string> types_map = {
+    { "html", "text/html"},
+    { "css", "text/css"},
+    { "png", "image/png"},
+    { "ico", "image/ico"},
+    { "txt", "text/txt"}
+};
 const int BUFFER_REQUEST_SIZE = 1024;
 
 std::vector<char> getHeader(int code, int size, std::string content_type) {
@@ -60,7 +68,16 @@ void logVisitor(std::string addr) {
 }
 
 std::vector<char> getDataWithHeader(int code, std::string path, std::string content_type) {
+    size_t pos = path.find("%20");
+    while(pos != std::string::npos) {
+        path.replace(pos, 3, " ");
+        pos = path.find("%20", pos + 1);
+    }
+
     std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (file.fail()) {
+        return {};
+    }
     std::vector<char> result;
 
     std::vector<char> vec_header = getHeader(code, file.tellg(), content_type);
@@ -81,11 +98,19 @@ std::vector<char> getDataWithHeader(int code, std::string path, std::string cont
     return result;
 }
 
-
-int main() {
+int main(int argc, char * const argv[]) {
     // todo log cerr with [ERROR] tag (+ async)
+
+    std::string path;
+    if (argc != 2) {
+        std::cerr << "Usage: ./server <path>" << std::endl;
+        return 1;
+    } else {
+        path = argv[1];
+    }
+
     freopen( file_logs, "a", stdout );
-    std::cout << "hello" << std::endl;
+    std::cout << "Starting server for " << path << std::endl;
 
     // todo change if unix env (#DEFINE ?)
 	WSADATA wsa_data;
@@ -102,6 +127,8 @@ int main() {
         std::cout << "Error on listen" << std::endl;
         return 1;
     }
+
+    std::cout << "Started server for " << path << std::endl;
 
     int client_addr_size = sizeof(client_addr);
     char buf[BUFFER_REQUEST_SIZE] = { 0 };
@@ -131,43 +158,36 @@ int main() {
                 }
                 std::string data(buf, buf + BUFFER_REQUEST_SIZE);
 
-                char *html_needed = NULL;
-                char *css_needed = NULL;
-                const std::regex reg("/imgs/[^ ]*");
-                std::smatch match;
-
-                html_needed = strstr (buf, "text/html");
-                css_needed = strstr (buf, "text/css");
-                bool img_needed = std::regex_match(buf, reg);
-                if(html_needed) {
-                    if (! strstr (buf, "GET / HTTP/1.1")) {
-                        // todo check if html file exists
+                const std::regex rgx("GET (/[^ ]*)");
+                const std::regex rgx_type("\\.([^ ]*)");
+                std::smatch matches, match_type;
+                std::string file_requested;
+                if(std::regex_search(data, matches, rgx)) {
+                    std::string type_requested(matches[1]);
+                    if(!std::regex_search(type_requested, match_type, rgx_type)) {
+                        type_requested = "html";
+                        file_requested = "." + path + std::string(matches[1]) + ".html";
+                    } else {
+                        type_requested = match_type[1];
+                        file_requested = "." + path + std::string(matches[1]);
+                    }
+                    std::vector<char> result = getDataWithHeader(200, file_requested, types_map.at(type_requested));
+                    if (result.empty()) {
+                        // todo refactor not to call getDataWithHeader 2x
                         std::vector<char> result = getDataWithHeader(404, "404.html", "text/html");
                         send(client, &result[0], result.size(), 0);
-                        continue;
+                    } else {
+                        send(client, &result[0], result.size(), 0);
                     }
-                    std::vector<char> result = getDataWithHeader(200, "site.html", "text/html");
-                    send(client, &result[0], result.size(), 0);
-                    // todo log async
-                    logVisitor(inet_ntoa(client_addr.sin_addr));
-                } else if(css_needed) {
-                    // TODO: generalize css (as img)
-                    std::vector<char> result = getDataWithHeader(200, "site.css", "text/css");
-                    send(client, &result[0], result.size(), 0);
-                } else if (std::regex_search(data, match, reg)) {
-                    // todo make image smaller
-                    std::vector<char> result = getDataWithHeader(200, "." + std::string(match[0]), "image/png");
-                    send(client, &result[0], result.size(), 0);
                 } else {
+                    // bad request
                     std::vector<char> result = getDataWithHeader(401, "401.html", "text/html");
                     send(client, &result[0], result.size(), 0);
                 }
-
             }
         }
 
 		const auto last_error = WSAGetLastError();
-		
 		if(last_error > 0)
 		{
 			std::cout << "Error: " << last_error << std::endl;
@@ -175,5 +195,5 @@ int main() {
 
     }
     
-
+    return 0;
 }
