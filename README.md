@@ -4,7 +4,9 @@ For a fast web server responding to simple http requests, featuring:
 - all files serving (css,imgs)
 - logging
 - counting visits
-- anti dos (todo)
+- thread pool (todo)
+- anti dos
+- multi platform (todo)
   
 
 For now made for windows (using wsock32)

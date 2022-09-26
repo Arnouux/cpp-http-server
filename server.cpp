@@ -104,7 +104,24 @@ std::vector<char> getDataWithHeader(int code, std::string path, std::string cont
     return result;
 }
 
-void handleClient(SOCKET client, std::string path) {
+void handleClient(SOCKET client, std::string path, std::string addr) {
+    
+    time_t current_time  = std::time(0);
+    if (current_time - last_time >= 60) {
+        addresses.clear();
+        last_time = current_time;
+    }
+    if (addresses.count(addr)) {
+        if(addresses[addr] >= 30) {
+            // todo send 429 ?
+            return;
+        } else {
+            addresses[addr] += 1;
+        }
+    } else {
+        addresses[addr] = 1;
+    }
+
     char buf[BUFFER_REQUEST_SIZE] = { 0 };
     int received = recv(client, buf, BUFFER_REQUEST_SIZE, 0);
     // todo generator html code
@@ -157,7 +174,6 @@ int main(int argc, const char* argv[]) {
     } else {
         path = argv[1];
     }
-
     std::cout << "Starting server for " << path << std::endl;
 
     // todo change if unix env (#DEFINE ?)
@@ -186,28 +202,10 @@ int main(int argc, const char* argv[]) {
 		if ((client = accept(server, reinterpret_cast<SOCKADDR *>(&client_addr), &client_addr_size)) != INVALID_SOCKET)
 		{
             std::cout << "client accepted:" << inet_ntoa(client_addr.sin_addr) << std::endl;
-            time_t current_time  = std::time(0);
-            if (current_time - last_time >= 60) {
-                addresses.clear();
-                last_time = current_time;
-                std::cout << "cleared" << std::endl;
-            }
-            if (addresses.count(inet_ntoa(client_addr.sin_addr))) {
-                if(addresses[inet_ntoa(client_addr.sin_addr)] >= 30) {
-                    // todo send 429 ?
-                    continue;
-                } else {
-                    addresses[inet_ntoa(client_addr.sin_addr)] += 1;
-                }
-            } else {
-                addresses[inet_ntoa(client_addr.sin_addr)] = 1;
-            }
-            std::cout << addresses[inet_ntoa(client_addr.sin_addr)] << std::endl;
         
             // todo thread pool
-            std::thread client_thread(handleClient, client, path);
+            std::thread client_thread(handleClient, client, path, inet_ntoa(client_addr.sin_addr));
             client_thread.detach();
-            
         }
 
 		const auto last_error = WSAGetLastError();
