@@ -25,9 +25,10 @@ std::map<std::string, int> addresses;
 time_t last_time;
 
 std::string getBestTypeContent(std::string type) {
-    // todo try types_map.at
-    // else return empty string
-    return types_map.at(type);
+    if (types_map.count(type)) {
+        return types_map.at(type);
+    }
+    return {};
 }
 
 std::vector<char> getHeader(int code, int size, std::string content_type) {
@@ -148,6 +149,9 @@ void handleClient(SOCKET client, std::string path, std::string addr) {
         } else {
             type_requested = match_type[1];
             file_requested = "." + path + std::string(matches[1]);
+        }
+        if(type_requested == "html") {
+            logVisitor(addr);
         }
         std::vector<char> result = getDataWithHeader(200, file_requested, getBestTypeContent(type_requested));
         if (result.empty()) {
