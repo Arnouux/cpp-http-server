@@ -137,6 +137,22 @@ void handleClient(SOCKET client, std::string path, std::string addr) {
     }
     std::string data(buf, buf + BUFFER_REQUEST_SIZE);
 
+    
+    SOCKADDR_IN address, client_addr;
+
+    address.sin_addr.s_addr = inet_addr("127.0.0.2");
+    address.sin_family = AF_INET;
+    address.sin_port = htons(65432);
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    int client_fd = connect(sock, (struct sockaddr*)&address,sizeof(address));
+    send(sock, data.c_str(), data.size(), 0);
+    char buffer[1024] = { 0 };
+    int valread = recv(sock, buffer, BUFFER_REQUEST_SIZE, 0);
+    printf("%s\n", buffer);
+    closesocket(client_fd);
+
+    return;
+
     // todo POST
     const std::regex rgx("GET (/[^ ]*)");
     const std::regex rgx_type("\\.([^ ]*)");
