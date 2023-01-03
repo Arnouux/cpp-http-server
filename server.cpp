@@ -23,6 +23,8 @@ const std::map<std::string, std::string> types_map = {
 const int BUFFER_REQUEST_SIZE = 1024;
 std::map<std::string, int> addresses;
 time_t last_time;
+enum class ServiceType { PROXY, LOADBALANCER, SERVER };
+ServiceType service_type;
 
 std::string getBestTypeContent(std::string type) {
     if (types_map.count(type)) {
@@ -137,50 +139,51 @@ void handleClient(SOCKET client, std::string path, std::string addr) {
     }
     std::string data(buf, buf + BUFFER_REQUEST_SIZE);
 
-    
-    SOCKADDR_IN address, client_addr;
-
-    address.sin_addr.s_addr = inet_addr("127.0.0.2");
-    address.sin_family = AF_INET;
-    address.sin_port = htons(65432);
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    int client_fd = connect(sock, (struct sockaddr*)&address,sizeof(address));
-    send(sock, data.c_str(), data.size(), 0);
-    char buffer[1024] = { 0 };
-    int valread = recv(sock, buffer, BUFFER_REQUEST_SIZE, 0);
-    printf("%s\n", buffer);
-    closesocket(client_fd);
-
-    return;
-
-    // todo POST
-    const std::regex rgx("GET (/[^ ]*)");
-    const std::regex rgx_type("\\.([^ ]*)");
-    std::smatch matches, match_type;
-    if(std::regex_search(data, matches, rgx)) {
-        std::string type_requested(matches[1]), file_requested;
-        if(!std::regex_search(type_requested, match_type, rgx_type)) {
-            type_requested = "html";
-            file_requested = "." + path + std::string(matches[1]) + ".html";
+    if(service_type == ServiceType::PROXY) {
+        SOCKADDR_IN address, client_addr;
+        address.sin_addr.s_addr = inet_addr("127.0.0.2");
+        address.sin_family = AF_INET;
+        address.sin_port = htons(65432);
+        int sock = socket(AF_INET, SOCK_STREAM, 0);
+        int client_fd = connect(sock, (struct sockaddr*)&address,sizeof(address));
+        send(sock, data.c_str(), data.size(), 0);
+        char buffer[1024] = { 0 };
+        int valread = recv(sock, buffer, BUFFER_REQUEST_SIZE, 0);
+        printf("%s\n", buffer);
+        closesocket(client_fd);
+        
+        send(client, &buffer[0], BUFFER_REQUEST_SIZE, 0);
+        return;
+    } else if(service_type == ServiceType::SERVER) {
+        // todo POST
+        const std::regex rgx("GET (/[^ ]*)");
+        const std::regex rgx_type("\\.([^ ]*)");
+        std::smatch matches, match_type;
+        if(std::regex_search(data, matches, rgx)) {
+            std::string type_requested(matches[1]), file_requested;
+            if(!std::regex_search(type_requested, match_type, rgx_type)) {
+                type_requested = "html";
+                file_requested = "." + path + std::string(matches[1]) + ".html";
+            } else {
+                type_requested = match_type[1];
+                file_requested = "." + path + std::string(matches[1]);
+            }
+            if(type_requested == "html") {
+                logVisitor(addr);
+            }
+            std::vector<char> result = getDataWithHeader(200, file_requested, getBestTypeContent(type_requested));
+            if (result.empty()) {
+                // todo refactor not to call getDataWithHeader 2x
+                std::vector<char> result = getDataWithHeader(404, "404.html", "text/html");
+                send(client, &result[0], result.size(), 0);
+            } else {
+                send(client, &result[0], result.size(), 0);
+            }
         } else {
-            type_requested = match_type[1];
-            file_requested = "." + path + std::string(matches[1]);
-        }
-        if(type_requested == "html") {
-            logVisitor(addr);
-        }
-        std::vector<char> result = getDataWithHeader(200, file_requested, getBestTypeContent(type_requested));
-        if (result.empty()) {
-            // todo refactor not to call getDataWithHeader 2x
-            std::vector<char> result = getDataWithHeader(404, "404.html", "text/html");
-            send(client, &result[0], result.size(), 0);
-        } else {
+            // bad request
+            std::vector<char> result = getDataWithHeader(401, "401.html", "text/html");
             send(client, &result[0], result.size(), 0);
         }
-    } else {
-        // bad request
-        std::vector<char> result = getDataWithHeader(401, "401.html", "text/html");
-        send(client, &result[0], result.size(), 0);
     }
 }
 
@@ -189,10 +192,12 @@ int main(int argc, const char* argv[]) {
 
     std::string path;
     if (argc != 2) {
-        std::cout << "Usage: ./server <path>" << std::endl;
+        std::cout << "Usage: ./server <path> <service_type>" << std::endl;
+        std::cout << "  <service_type> = ['Server' | 'Proxy' | 'LoadBalancer']" << std::endl;
         return 1;
     } else {
         path = argv[1];
+        service_type = ServiceType::SERVER;
     }
     std::cout << "Starting server for " << path << std::endl;
 
