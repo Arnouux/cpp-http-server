@@ -1,6 +1,7 @@
 #include "stdbool.h"
 #include "stdlib.h"
 #include "stdio.h"
+#include "string.h"
 
 typedef struct trie_node_t {
     char *word;
@@ -37,10 +38,33 @@ int find(char **target) {
     return 0;
 }
 
+char **tokenize_url(char *url) {
+    char s[256];
+    strcpy(s, url);
+    char **tokens = malloc(sizeof(char*) * 3); 
+    char* token = strtok(s, "/");
+    tokens[0] = malloc(sizeof(char) * 10);
+    strcpy(tokens[0], token);
+    int i=1;
+    while (token) {
+        token = strtok(NULL, "/");
+        if(token) {
+            tokens[i] = malloc(sizeof(char) * 10);
+            strcpy(tokens[i], token);
+            i++;
+        }
+    }
+    return tokens;
+}
+
 int main() {
 
-    char *url1 = "/v1/discovery/services";
-    char *url2 = "/v1/discovery/services/1";
+    char *url1 = "/v1/domain/subdomain1";
+    char **url1_tokenized = tokenize_url(url1);
+    for(int i=0; i<3; ++i) {
+        printf("t:   %s\n", url1_tokenized[i]);
+    }
+    char *url2 = "/v1/domain/subdomain1/1";
 
     trie_node_t *children = (trie_node_t*) malloc(sizeof(trie_node_t) * 10);
     trie_node_t *children_discovery = (trie_node_t*) malloc(sizeof(trie_node_t) * 10);
@@ -49,25 +73,25 @@ int main() {
     root.is_leaf = false;
     root.children = children;
 
-    trie_node_t discovery = { .word = "/discovery", .children = children_discovery, .is_leaf = false, .children_size = 1};
+    trie_node_t discovery = { .word = "/domain", .children = children_discovery, .is_leaf = false, .children_size = 1};
     children[0] = discovery;
     root.children_size++;
 
-    trie_node_t marketrisk = { .word = "/marketrisk"};
+    trie_node_t marketrisk = { .word = "/subdomain2"};
     children[1] = marketrisk;
     root.children_size++;
 
 
     // discovery
-    trie_node_t services = { .word = "/services"};
+    trie_node_t services = { .word = "/subdomain1"};
     children_discovery[0] = services;
     discovery.children_size++;
 
 
     char **tokens = (char **) malloc(sizeof(char*) * 3);
     tokens[0] = "/v1";
-    tokens[1] = "/discovery";
-    tokens[2] = "/services";
+    tokens[1] = "/domain";
+    tokens[2] = "/subdomain1";
     find(tokens);
 
     return 0;
