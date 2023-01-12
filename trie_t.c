@@ -3,16 +3,10 @@
 #include "stdio.h"
 #include "string.h"
 
-typedef struct trie_node_t {
-    char *word;
-    bool is_leaf;
-    struct trie_node_t *children;
-    int children_size;
-} trie_node_t;
+#include "trie_t.h"
 
-trie_node_t root;
 
-int find(char **target) {
+int find(trie_node_t root, const char **target) {
     if(target[0] != root.word) {
         return 0;
     }
@@ -38,61 +32,23 @@ int find(char **target) {
     return 0;
 }
 
-char **tokenize_url(char *url) {
+const char **tokenize_url(const char *url) {
     char s[256];
     strcpy(s, url);
-    char **tokens = malloc(sizeof(char*) * 3); 
+    char **tokens = malloc(sizeof(char*) * 5); 
     char* token = strtok(s, "/");
-    tokens[0] = malloc(sizeof(char) * 10);
+    tokens[0] = malloc(sizeof(char) * 32);
     strcpy(tokens[0], token);
     int i=1;
     while (token) {
         token = strtok(NULL, "/");
         if(token) {
-            tokens[i] = malloc(sizeof(char) * 10);
+            tokens[i] = malloc(sizeof(char) * 32);
             strcpy(tokens[i], token);
             i++;
         }
     }
-    return tokens;
-}
-
-int main() {
-
-    char *url1 = "/v1/domain/subdomain1";
-    char **url1_tokenized = tokenize_url(url1);
-    for(int i=0; i<3; ++i) {
-        printf("t:   %s\n", url1_tokenized[i]);
-    }
-    char *url2 = "/v1/domain/subdomain1/1";
-
-    trie_node_t *children = (trie_node_t*) malloc(sizeof(trie_node_t) * 10);
-    trie_node_t *children_discovery = (trie_node_t*) malloc(sizeof(trie_node_t) * 10);
-
-    root.word = "/v1";
-    root.is_leaf = false;
-    root.children = children;
-
-    trie_node_t discovery = { .word = "/domain", .children = children_discovery, .is_leaf = false, .children_size = 1};
-    children[0] = discovery;
-    root.children_size++;
-
-    trie_node_t marketrisk = { .word = "/subdomain2"};
-    children[1] = marketrisk;
-    root.children_size++;
-
-
-    // discovery
-    trie_node_t services = { .word = "/subdomain1"};
-    children_discovery[0] = services;
-    discovery.children_size++;
-
-
-    char **tokens = (char **) malloc(sizeof(char*) * 3);
-    tokens[0] = "/v1";
-    tokens[1] = "/domain";
-    tokens[2] = "/subdomain1";
-    find(tokens);
-
-    return 0;
+    const char **ctokens;
+    ctokens = tokens;
+    return ctokens;
 }

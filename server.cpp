@@ -11,6 +11,16 @@
 #include <map>
 #include <thread>
 
+#ifdef __cplusplus 
+extern "C" {
+#endif
+
+#include "trie_t.h"
+
+#ifdef __cplusplus 
+}
+#endif
+
 const char* file_visitors = "list_visitors.lst";
 const char* file_logs = "logs.lst";
 const std::map<std::string, std::string> types_map = {
@@ -76,6 +86,34 @@ void logVisitor(std::string addr) {
 
     remove(file_visitors);
     rename(("tmp_" + std::string(file_visitors)).c_str(), file_visitors);
+}
+
+trie_node_t whitelist;
+
+bool isUrlWhitelisted(std::string url) {
+    const char **tokens = tokenize_url(url.c_str());
+    std::cout << url << std::endl;
+
+    if(find(whitelist, tokens)) {
+        return true;
+    }
+    return true; // TODO /!\ // use '*' for any file after some url token
+}
+
+void setWhitelist() {
+    std::string line;
+    std::ifstream whitelist_file ("whiltelist.lst");
+    if (whitelist_file.is_open()) {
+        while ( getline (whitelist_file,line) ) {
+            const char **tokens = tokenize_url("/blog");
+            trie_node_t *children = (trie_node_t*) malloc(sizeof(trie_node_t) * 10);
+            whitelist.word = line.c_str();
+            whitelist.is_leaf = true;
+            whitelist.children = children;
+        }
+        whitelist_file.close();
+    }
+
 }
 
 std::vector<char> getDataWithHeader(int code, std::string path, std::string content_type) {
@@ -171,6 +209,12 @@ void handleClient(SOCKET client, std::string path, std::string addr) {
             if(type_requested == "html") {
                 logVisitor(addr);
             }
+
+            if(! isUrlWhitelisted(file_requested)) {
+                std::vector<char> result = getDataWithHeader(401, "401.html", "text/html");
+                send(client, &result[0], result.size(), 0);
+            }
+
             std::vector<char> result = getDataWithHeader(200, file_requested, getBestTypeContent(type_requested));
             if (result.empty()) {
                 // todo refactor not to call getDataWithHeader 2x
@@ -200,6 +244,7 @@ int main(int argc, const char* argv[]) {
         service_type = ServiceType::SERVER;
     }
     std::cout << "Starting server for " << path << std::endl;
+    setWhitelist();
 
     // todo change if unix env (#DEFINE ?)
 	WSADATA wsa_data;
