@@ -12,4 +12,8 @@ For a fast web server responding to simple http requests, featuring:
 For now made for windows (using wsock32)
 ### How to use
 
-Compile with the command `g++ server.cpp -o server.exe -lwsock32`, place the executable on your site folder and launch it.
+Compile with the commands using:
+`gcc trie_t.c -c`
+`g++ server.cpp trie_t.o -o server.exe -lwsock32`
+Place the executable on your site folder and launch it, or use it as the proxy to connect to your application.
+Run `server.exe <folder> <service_type>`.
