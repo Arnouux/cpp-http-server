@@ -7,7 +7,7 @@
 
 
 int find(trie_node_t root, const char **target) {
-    if(target[0] != root.word) {
+    if(strcmp(target[0], root.word)) {
         return 0;
     }
 

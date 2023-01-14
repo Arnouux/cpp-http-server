@@ -88,32 +88,35 @@ void logVisitor(std::string addr) {
     rename(("tmp_" + std::string(file_visitors)).c_str(), file_visitors);
 }
 
-trie_node_t whitelist;
 
-bool isUrlWhitelisted(std::string url) {
-    const char **tokens = tokenize_url(url.c_str());
-    std::cout << url << std::endl;
-
+bool isUrlWhitelisted(trie_node_t whitelist, std::string url) {
+    //const char **tokens = tokenize_url(url.c_str());
+    const char **tokens = (const char**) malloc(sizeof(char*) * 1);
+    tokens[0] = (char*) malloc(sizeof(char) * 50);
+    tokens[0] = "./blog/blog.html";
     if(find(whitelist, tokens)) {
         return true;
     }
     return true; // TODO /!\ // use '*' for any file after some url token
 }
 
-void setWhitelist() {
+trie_node_t setWhitelist() {
     std::string line;
-    std::ifstream whitelist_file ("whiltelist.lst");
+    std::ifstream whitelist_file ("whitelist.lst");
+    trie_node_t whitelist = {};
+    std::cout << "hello" << std::endl;
     if (whitelist_file.is_open()) {
         while ( getline (whitelist_file,line) ) {
-            const char **tokens = tokenize_url("/blog");
+            const char **tokens = tokenize_url(line.c_str());
+            // todo to tokenize and set in trie
             trie_node_t *children = (trie_node_t*) malloc(sizeof(trie_node_t) * 10);
-            whitelist.word = line.c_str();
+            whitelist.word = strdup(line.c_str());
             whitelist.is_leaf = true;
             whitelist.children = children;
         }
         whitelist_file.close();
     }
-
+    return whitelist;
 }
 
 std::vector<char> getDataWithHeader(int code, std::string path, std::string content_type) {
@@ -145,7 +148,7 @@ std::vector<char> getDataWithHeader(int code, std::string path, std::string cont
     return result;
 }
 
-void handleClient(SOCKET client, std::string path, std::string addr) {
+void handleClient(SOCKET client, std::string path, std::string addr, trie_node_t whitelist) {
     
     time_t current_time  = std::time(0);
     if (current_time - last_time >= 60) {
@@ -210,7 +213,7 @@ void handleClient(SOCKET client, std::string path, std::string addr) {
                 logVisitor(addr);
             }
 
-            if(! isUrlWhitelisted(file_requested)) {
+            if(! isUrlWhitelisted(whitelist, file_requested)) {
                 std::vector<char> result = getDataWithHeader(401, "401.html", "text/html");
                 send(client, &result[0], result.size(), 0);
             }
@@ -231,6 +234,7 @@ void handleClient(SOCKET client, std::string path, std::string addr) {
     }
 }
 
+
 int main(int argc, const char* argv[]) {
     // todo log cerr with [ERROR] tag (+ async)
 
@@ -244,7 +248,7 @@ int main(int argc, const char* argv[]) {
         service_type = ServiceType::SERVER;
     }
     std::cout << "Starting server for " << path << std::endl;
-    setWhitelist();
+    trie_node_t whitelist = setWhitelist();
 
     // todo change if unix env (#DEFINE ?)
 	WSADATA wsa_data;
@@ -274,7 +278,7 @@ int main(int argc, const char* argv[]) {
             std::cout << "client accepted:" << inet_ntoa(client_addr.sin_addr) << std::endl;
         
             // todo thread pool
-            std::thread client_thread(handleClient, client, path, inet_ntoa(client_addr.sin_addr));
+            std::thread client_thread(handleClient, client, path, inet_ntoa(client_addr.sin_addr), whitelist);
             client_thread.detach();
         }
 
