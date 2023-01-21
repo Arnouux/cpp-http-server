@@ -6,13 +6,12 @@
 #include "trie_t.h"
 
 
-int find(trie_node_t *root, const char **target) {
+int find(trie_node_t *root, const char **target, const int nb_tokens) {
     // if(strcmp(target[0], root->word)) {
     //     return 0;
     // }
-
     trie_node_t *current_node = root;
-    int current_token_i = 1;
+    int current_token_i = 0;
 
     int found = 1;
     while(found) {
@@ -20,8 +19,11 @@ int find(trie_node_t *root, const char **target) {
         for(int i=0; i<current_node->children_size; ++i) {
             printf("val: %s\n", current_node->children[i]->word);
             printf("target: %s\n", target[current_token_i]);
-            if(current_node->children[i]->word == target[current_token_i]) {
+            if(!strcmp(current_node->children[i]->word,target[current_token_i])) {
                 printf("found\n");
+                if(nb_tokens == current_token_i+1) {
+                    return 1;
+                }
                 current_token_i++;
                 current_node = current_node->children[i];
                 found = 1;
@@ -115,7 +117,7 @@ int main() {
     add_endpoint(root, tokens);
     add_endpoint(root, tokens2);
     printf("---------\n");
-    if(find(root, tokens2)) {
+    if(find(root, tokens, 3)) {
         printf("TRUE\n");
     } else {
         printf("FALSE\n");
