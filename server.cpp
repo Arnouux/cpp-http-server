@@ -90,8 +90,8 @@ void logVisitor(std::string addr) {
 
 
 bool isUrlWhitelisted(trie_node_t *whitelist, std::string url) {
-    //const char **tokens = tokenize_url(url.c_str());
     const char **tokens = tokenize_url(url.c_str());
+    // todo lengtrh url
     if(find(whitelist, tokens, 3)) {
         return true;
     }

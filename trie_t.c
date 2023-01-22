@@ -17,10 +17,7 @@ int find(const trie_node_t *root, const char **target, const int nb_tokens) {
     while(found) {
         found = 0;
         for(int i=0; i<current_node->children_size; ++i) {
-            //printf("val: %s\n", current_node->children[i]->word);
-            //printf("target: %s\n", target[current_token_i]);
             if(!strcmp(current_node->children[i]->word,target[current_token_i])) {
-                printf("found\n");
                 if(nb_tokens == current_token_i+1) {
                     return 1;
                 }
@@ -30,7 +27,6 @@ int find(const trie_node_t *root, const char **target, const int nb_tokens) {
             }
         }
     }
-    printf("end\n");
     return 0;
 }
 
