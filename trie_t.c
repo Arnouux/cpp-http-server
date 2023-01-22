@@ -6,19 +6,19 @@
 #include "trie_t.h"
 
 
-int find(trie_node_t *root, const char **target, const int nb_tokens) {
+int find(const trie_node_t *root, const char **target, const int nb_tokens) {
     // if(strcmp(target[0], root->word)) {
     //     return 0;
     // }
-    trie_node_t *current_node = root;
+    const trie_node_t *current_node = root;
     int current_token_i = 0;
 
     int found = 1;
     while(found) {
         found = 0;
         for(int i=0; i<current_node->children_size; ++i) {
-            printf("val: %s\n", current_node->children[i]->word);
-            printf("target: %s\n", target[current_token_i]);
+            //printf("val: %s\n", current_node->children[i]->word);
+            //printf("target: %s\n", target[current_token_i]);
             if(!strcmp(current_node->children[i]->word,target[current_token_i])) {
                 printf("found\n");
                 if(nb_tokens == current_token_i+1) {
@@ -55,7 +55,7 @@ const char **tokenize_url(const char *url) {
     return ctokens;
 }
 
-void print_from(trie_node_t *root) {
+void print_from(const trie_node_t *root) {
     printf("%s -> %s -> %s -> %d\n", root->word, root->children[0]->word, root->children[0]->children[0]->word, root->children[0]->children[0]->children_size);
 }
 
@@ -65,10 +65,10 @@ int add_endpoint(trie_node_t *root, const char **add) {
     while(current_token_i < 3) {
         int found = 0;
 
-        printf("current node (%s) has %d\n", current_node->word, current_node->children_size);
+        //printf("current node (%s) has %d\n", current_node->word, current_node->children_size);
         for(int i=0; i<current_node->children_size; i++) {
             if(strcmp(current_node->children[i]->word, add[current_token_i]) == 0) {
-                printf("found\n");
+                //printf("found\n");
                 found = 1;
                 trie_node_t *node_found = current_node->children[i];
                 current_node = node_found;
@@ -106,20 +106,20 @@ trie_node_t *prepare_trie() {
     return root;
 }
 
-int main() {
+// int main() {
 
     
-    trie_node_t *root = prepare_trie();
+//     trie_node_t *root = prepare_trie();
 
-    const char **tokens = tokenize_url("/v1/domain/subdomain");
-    const char **tokens2 = tokenize_url("/v1/domain/subdomain2");
+//     const char **tokens = tokenize_url("/v1/domain/subdomain");
+//     const char **tokens2 = tokenize_url("/v1/domain/subdomain2");
 
-    add_endpoint(root, tokens);
-    add_endpoint(root, tokens2);
-    printf("---------\n");
-    if(find(root, tokens, 3)) {
-        printf("TRUE\n");
-    } else {
-        printf("FALSE\n");
-    }
-}
+//     add_endpoint(root, tokens);
+//     add_endpoint(root, tokens2);
+//     printf("---------\n");
+//     if(find(root, tokens2, 3)) {
+//         printf("TRUE\n");
+//     } else {
+//         printf("FALSE\n");
+//     }
+// }

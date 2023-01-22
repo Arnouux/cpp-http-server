@@ -89,30 +89,26 @@ void logVisitor(std::string addr) {
 }
 
 
-bool isUrlWhitelisted(trie_node_t whitelist, std::string url) {
+bool isUrlWhitelisted(trie_node_t *whitelist, std::string url) {
     //const char **tokens = tokenize_url(url.c_str());
-    const char **tokens = (const char**) malloc(sizeof(char*) * 1);
-    tokens[0] = (char*) malloc(sizeof(char) * 50);
-    tokens[0] = "./blog/blog.html";
-    if(find(whitelist, tokens)) {
+    const char **tokens = tokenize_url(url.c_str());
+    if(find(whitelist, tokens, 3)) {
         return true;
     }
-    return true; // TODO /!\ // use '*' for any file after some url token
+    return false; // TODO /!\ // use '*' for any file after some url token
 }
 
-trie_node_t setWhitelist() {
+trie_node_t *setWhitelist() {
+    // root
+    trie_node_t *whitelist = prepare_trie();
+
+    // endpoints
     std::string line;
     std::ifstream whitelist_file ("whitelist.lst");
-    trie_node_t whitelist = {};
-    std::cout << "hello" << std::endl;
     if (whitelist_file.is_open()) {
         while ( getline (whitelist_file,line) ) {
             const char **tokens = tokenize_url(line.c_str());
-            // todo to tokenize and set in trie
-            trie_node_t *children = (trie_node_t*) malloc(sizeof(trie_node_t) * 10);
-            whitelist.word = strdup(line.c_str());
-            whitelist.is_leaf = true;
-            whitelist.children = children;
+            add_endpoint(whitelist, tokens);
         }
         whitelist_file.close();
     }
@@ -148,7 +144,7 @@ std::vector<char> getDataWithHeader(int code, std::string path, std::string cont
     return result;
 }
 
-void handleClient(SOCKET client, std::string path, std::string addr, trie_node_t whitelist) {
+void handleClient(SOCKET client, std::string path, std::string addr, trie_node_t *whitelist) {
     
     time_t current_time  = std::time(0);
     if (current_time - last_time >= 60) {
@@ -248,7 +244,7 @@ int main(int argc, const char* argv[]) {
         service_type = ServiceType::SERVER;
     }
     std::cout << "Starting server for " << path << std::endl;
-    trie_node_t whitelist = setWhitelist();
+    trie_node_t *whitelist = setWhitelist();
 
     // todo change if unix env (#DEFINE ?)
 	WSADATA wsa_data;
