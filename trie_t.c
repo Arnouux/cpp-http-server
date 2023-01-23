@@ -16,7 +16,7 @@ int find(const trie_node_t *root, const char **target, const int nb_tokens) {
         for(int i=0; i<current_node->children_size; ++i) {
             if(!strcmp(current_node->children[i]->word,target[current_token_i])
                 || !strcmp("*", current_node->children[i]->word)) {
-                if(nb_tokens == current_token_i+1 && current_node->is_leaf) {
+                if(nb_tokens == current_token_i+1 && current_node->children[i]->is_leaf) {
                     return 1;
                 }
                 current_token_i++;
@@ -75,7 +75,7 @@ int add_endpoint(trie_node_t *root, const char **add) {
                 char *word = (char *) malloc(64);
                 strcpy(word, add[current_token_i]);
                 node_to_add->word=word;
-                if(current_token_i == 1) {
+                if(current_token_i == 2) {
                     node_to_add->is_leaf=true;
                 } else {
                     node_to_add->is_leaf=false;
@@ -104,36 +104,36 @@ trie_node_t *prepare_trie() {
     return root;
 }
 
-int main() {
-    trie_node_t *root = prepare_trie();
+// int main() {
+//     trie_node_t *root = prepare_trie();
 
-    const char **tokens = tokenize_url("/v1/domain/subdomain");
-    const char **tokens2 = tokenize_url("/v1/domain2/*");
-    const char **tokens3 = tokenize_url("/v1/domain2/toto");
-    const char **tokens4 = tokenize_url("/v1/domain/subdomain3");
-    const char **tokens5 = tokenize_url("/v1/domain");
+//     const char **tokens = tokenize_url("/v1/domain/subdomain");
+//     const char **tokens2 = tokenize_url("/v1/domain2/*");
+//     const char **tokens3 = tokenize_url("/v1/domain2/toto");
+//     const char **tokens4 = tokenize_url("/v1/domain/subdomain3");
+//     const char **tokens5 = tokenize_url("/v1/domain");
 
-    add_endpoint(root, tokens);
-    add_endpoint(root, tokens2);
-    printf("---------\n");
-    if(find(root, tokens, 3)) {
-        printf("TRUE\n");
-    } else {
-        printf("FALSE\n");
-    }
-    if(find(root, tokens5, 2)) {
-        printf("FALSE\n");
-    } else {
-        printf("TRUE\n");
-    }
-    if(find(root, tokens3, 3)) {
-        printf("TRUE\n");
-    } else {
-        printf("FALSE\n");
-    }
-    if(find(root, tokens4, 3)) {
-        printf("FALSE\n");
-    } else {
-        printf("TRUE\n");
-    }
-}
+//     add_endpoint(root, tokens);
+//     add_endpoint(root, tokens2);
+//     printf("---------\n");
+//     if(find(root, tokens, 3)) {
+//         printf("TRUE\n");
+//     } else {
+//         printf("FALSE\n");
+//     }
+//     if(find(root, tokens5, 2)) {
+//         printf("FALSE\n");
+//     } else {
+//         printf("TRUE\n");
+//     }
+//     if(find(root, tokens3, 3)) {
+//         printf("TRUE\n");
+//     } else {
+//         printf("FALSE\n");
+//     }
+//     if(find(root, tokens4, 3)) {
+//         printf("FALSE\n");
+//     } else {
+//         printf("TRUE\n");
+//     }
+// }
