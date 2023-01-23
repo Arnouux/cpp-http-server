@@ -7,18 +7,16 @@
 
 
 int find(const trie_node_t *root, const char **target, const int nb_tokens) {
-    // if(strcmp(target[0], root->word)) {
-    //     return 0;
-    // }
     const trie_node_t *current_node = root;
     int current_token_i = 0;
 
     int found = 1;
-    while(found) {
+    while(found && current_token_i < nb_tokens) {
         found = 0;
         for(int i=0; i<current_node->children_size; ++i) {
-            if(!strcmp(current_node->children[i]->word,target[current_token_i])) {
-                if(nb_tokens == current_token_i+1) {
+            if(!strcmp(current_node->children[i]->word,target[current_token_i])
+                || !strcmp("*", current_node->children[i]->word)) {
+                if(nb_tokens == current_token_i+1 && current_node->is_leaf) {
                     return 1;
                 }
                 current_token_i++;
@@ -77,7 +75,11 @@ int add_endpoint(trie_node_t *root, const char **add) {
                 char *word = (char *) malloc(64);
                 strcpy(word, add[current_token_i]);
                 node_to_add->word=word;
-                node_to_add->is_leaf=false;
+                if(current_token_i == 1) {
+                    node_to_add->is_leaf=true;
+                } else {
+                    node_to_add->is_leaf=false;
+                }
                 node_to_add->children_size=0;
                 node_to_add->children=children_list;
 
@@ -102,20 +104,36 @@ trie_node_t *prepare_trie() {
     return root;
 }
 
-// int main() {
+int main() {
+    trie_node_t *root = prepare_trie();
 
-    
-//     trie_node_t *root = prepare_trie();
+    const char **tokens = tokenize_url("/v1/domain/subdomain");
+    const char **tokens2 = tokenize_url("/v1/domain2/*");
+    const char **tokens3 = tokenize_url("/v1/domain2/toto");
+    const char **tokens4 = tokenize_url("/v1/domain/subdomain3");
+    const char **tokens5 = tokenize_url("/v1/domain");
 
-//     const char **tokens = tokenize_url("/v1/domain/subdomain");
-//     const char **tokens2 = tokenize_url("/v1/domain/subdomain2");
-
-//     add_endpoint(root, tokens);
-//     add_endpoint(root, tokens2);
-//     printf("---------\n");
-//     if(find(root, tokens2, 3)) {
-//         printf("TRUE\n");
-//     } else {
-//         printf("FALSE\n");
-//     }
-// }
+    add_endpoint(root, tokens);
+    add_endpoint(root, tokens2);
+    printf("---------\n");
+    if(find(root, tokens, 3)) {
+        printf("TRUE\n");
+    } else {
+        printf("FALSE\n");
+    }
+    if(find(root, tokens5, 2)) {
+        printf("FALSE\n");
+    } else {
+        printf("TRUE\n");
+    }
+    if(find(root, tokens3, 3)) {
+        printf("TRUE\n");
+    } else {
+        printf("FALSE\n");
+    }
+    if(find(root, tokens4, 3)) {
+        printf("FALSE\n");
+    } else {
+        printf("TRUE\n");
+    }
+}
