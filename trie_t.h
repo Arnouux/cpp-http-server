@@ -5,7 +5,12 @@ typedef struct trie_node_t {
     int children_size;
 } trie_node_t;
 
-int find(const trie_node_t *root, const char **target, const int nb_tokens);
-const char **tokenize_url(const char *url);
-int add_endpoint(trie_node_t *root, const char **add);
+typedef struct url_t {
+    const char **tokens;
+    int size;
+} url_t;
+
+int find(const trie_node_t *root, const url_t *url);
+const url_t *tokenize_url(const char *url);
+int add_endpoint(trie_node_t *root, const url_t *url);
 trie_node_t *prepare_trie();

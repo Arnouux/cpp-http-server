@@ -6,29 +6,32 @@
 #include "trie_t.h"
 
 
-int find(const trie_node_t *root, const char **target, const int nb_tokens) {
+int find(const trie_node_t *root, const url_t *url) {
     const trie_node_t *current_node = root;
     int current_token_i = 0;
 
     int found = 1;
-    while(found && current_token_i < nb_tokens) {
+    while(found && current_token_i < url->size) {
         found = 0;
         for(int i=0; i<current_node->children_size; ++i) {
-            if(!strcmp(current_node->children[i]->word,target[current_token_i])
+            if(!strcmp(current_node->children[i]->word,url->tokens[current_token_i])
                 || !strcmp("*", current_node->children[i]->word)) {
-                if(nb_tokens == current_token_i+1 && current_node->children[i]->is_leaf) {
+                if(url->size == current_token_i+1 && current_node->children[i]->is_leaf) {
                     return 1;
                 }
                 current_token_i++;
                 current_node = current_node->children[i];
                 found = 1;
             }
+            else if(!strcmp("**", current_node->children[i]->word)) {
+                return 1;
+            }
         }
     }
     return 0;
 }
 
-const char **tokenize_url(const char *url) {
+const url_t *tokenize_url(const char *url) {
     char s[256];
     strcpy(s, url);
     char **tokens = malloc(sizeof(char*) * 5); 
@@ -44,24 +47,27 @@ const char **tokenize_url(const char *url) {
             i++;
         }
     }
-    const char **ctokens;
-    ctokens = tokens;
-    return ctokens;
+    
+    url_t *result = (url_t *) malloc(sizeof(url_t));
+    result->size = i;
+    result->tokens = tokens;
+
+    return result;
 }
 
 void print_from(const trie_node_t *root) {
     printf("%s -> %s -> %s -> %d\n", root->word, root->children[0]->word, root->children[0]->children[0]->word, root->children[0]->children[0]->children_size);
 }
 
-int add_endpoint(trie_node_t *root, const char **add) {
+int add_endpoint(trie_node_t *root, const url_t *url) {
     trie_node_t *current_node = root;
     int current_token_i = 0;
-    while(current_token_i < 3) {
+    while(current_token_i < url->size) {
         int found = 0;
 
         //printf("current node (%s) has %d\n", current_node->word, current_node->children_size);
         for(int i=0; i<current_node->children_size; i++) {
-            if(strcmp(current_node->children[i]->word, add[current_token_i]) == 0) {
+            if(strcmp(current_node->children[i]->word, url->tokens[current_token_i]) == 0) {
                 //printf("found\n");
                 found = 1;
                 trie_node_t *node_found = current_node->children[i];
@@ -73,9 +79,9 @@ int add_endpoint(trie_node_t *root, const char **add) {
                 trie_node_t **children_list = (trie_node_t **) calloc(10, sizeof(trie_node_t*));
                 trie_node_t *node_to_add = (trie_node_t *) malloc(sizeof(trie_node_t));
                 char *word = (char *) malloc(64);
-                strcpy(word, add[current_token_i]);
+                strcpy(word, url->tokens[current_token_i]);
                 node_to_add->word=word;
-                if(current_token_i == 2) {
+                if(current_token_i == url->size-1) {
                     node_to_add->is_leaf=true;
                 } else {
                     node_to_add->is_leaf=false;
@@ -104,36 +110,57 @@ trie_node_t *prepare_trie() {
     return root;
 }
 
-// int main() {
-//     trie_node_t *root = prepare_trie();
+int main() {
+    trie_node_t *root = prepare_trie();
 
-//     const char **tokens = tokenize_url("/v1/domain/subdomain");
-//     const char **tokens2 = tokenize_url("/v1/domain2/*");
-//     const char **tokens3 = tokenize_url("/v1/domain2/toto");
-//     const char **tokens4 = tokenize_url("/v1/domain/subdomain3");
-//     const char **tokens5 = tokenize_url("/v1/domain");
+    const url_t *tokens = tokenize_url("/v1/domain/subdomain");
+    const url_t *tokens2 = tokenize_url("/v1/domain2/*");
+    const url_t *tokens3 = tokenize_url("/v1/domain2/toto");
+    const url_t *tokens4 = tokenize_url("/v1/domain/subdomain3");
+    const url_t *tokens5 = tokenize_url("/v1/domain");
+    const url_t *tokens6 = tokenize_url("/v1/domain/toto");
+    const url_t *tokens7 = tokenize_url("/v2/**");
+    const url_t *tokens8 = tokenize_url("/v2/domain/subdomain");
+    const url_t *tokens9 = tokenize_url("/v3/domain/subdomain");
 
-//     add_endpoint(root, tokens);
-//     add_endpoint(root, tokens2);
-//     printf("---------\n");
-//     if(find(root, tokens, 3)) {
-//         printf("TRUE\n");
-//     } else {
-//         printf("FALSE\n");
-//     }
-//     if(find(root, tokens5, 2)) {
-//         printf("FALSE\n");
-//     } else {
-//         printf("TRUE\n");
-//     }
-//     if(find(root, tokens3, 3)) {
-//         printf("TRUE\n");
-//     } else {
-//         printf("FALSE\n");
-//     }
-//     if(find(root, tokens4, 3)) {
-//         printf("FALSE\n");
-//     } else {
-//         printf("TRUE\n");
-//     }
-// }
+    add_endpoint(root, tokens);
+    add_endpoint(root, tokens2);
+    add_endpoint(root, tokens5);
+    add_endpoint(root, tokens7);
+    printf("---------\n");
+    if(find(root, tokens)) {
+        printf("TRUE\n");
+    } else {
+        printf("FALSE\n");
+    }
+    if(find(root, tokens5)) {
+        printf("FALSE\n");
+    } else {
+        printf("TRUE\n");
+    }
+    if(find(root, tokens3)) {
+        printf("TRUE\n");
+    } else {
+        printf("FALSE\n");
+    }
+    if(find(root, tokens4)) {
+        printf("FALSE\n");
+    } else {
+        printf("TRUE\n");
+    }
+    if(find(root, tokens6)) {
+        printf("FALSE\n");
+    } else {
+        printf("TRUE\n");
+    }
+    if(find(root, tokens8)) {
+        printf("TRUE\n");
+    } else {
+        printf("FALSE\n");
+    }
+    if (!find(root, tokens9)) {
+        printf("TRUE\n");
+    } else {
+        printf("FALSE\n");
+    }
+}
