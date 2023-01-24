@@ -21,3 +21,12 @@ Compile with the commands using:
 Place the executable on your site folder and launch it, or use it as the proxy to connect to your application.
 
 Run `server.exe <folder> <service_type>`.
+
+
+### How whitelisting works
+In `whitelist.lst`, 1 line per accepted url:
++ ./website/html/*
++ ./website/css/*
++ ./resources/**
+
+The above `whitelist.lst` will accept requests such as `website/html/x.html`, `website/html/y.css`, but not `website/html/other-folder/x.html`. It accepts any url starting with `resources/`

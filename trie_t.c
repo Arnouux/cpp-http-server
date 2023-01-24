@@ -110,57 +110,57 @@ trie_node_t *prepare_trie() {
     return root;
 }
 
-int main() {
-    trie_node_t *root = prepare_trie();
+// int main() {
+//     trie_node_t *root = prepare_trie();
 
-    const url_t *tokens = tokenize_url("/v1/domain/subdomain");
-    const url_t *tokens2 = tokenize_url("/v1/domain2/*");
-    const url_t *tokens3 = tokenize_url("/v1/domain2/toto");
-    const url_t *tokens4 = tokenize_url("/v1/domain/subdomain3");
-    const url_t *tokens5 = tokenize_url("/v1/domain");
-    const url_t *tokens6 = tokenize_url("/v1/domain/toto");
-    const url_t *tokens7 = tokenize_url("/v2/**");
-    const url_t *tokens8 = tokenize_url("/v2/domain/subdomain");
-    const url_t *tokens9 = tokenize_url("/v3/domain/subdomain");
+//     const url_t *tokens = tokenize_url("/v1/domain/subdomain");
+//     const url_t *tokens2 = tokenize_url("/v1/domain2/*");
+//     const url_t *tokens3 = tokenize_url("/v1/domain2/toto");
+//     const url_t *tokens4 = tokenize_url("/v1/domain/subdomain3");
+//     const url_t *tokens5 = tokenize_url("/v1/domain");
+//     const url_t *tokens6 = tokenize_url("/v1/domain/toto");
+//     const url_t *tokens7 = tokenize_url("/v2/**");
+//     const url_t *tokens8 = tokenize_url("/v2/domain/subdomain");
+//     const url_t *tokens9 = tokenize_url("/v3/domain/subdomain");
 
-    add_endpoint(root, tokens);
-    add_endpoint(root, tokens2);
-    add_endpoint(root, tokens5);
-    add_endpoint(root, tokens7);
-    printf("---------\n");
-    if(find(root, tokens)) {
-        printf("TRUE\n");
-    } else {
-        printf("FALSE\n");
-    }
-    if(find(root, tokens5)) {
-        printf("FALSE\n");
-    } else {
-        printf("TRUE\n");
-    }
-    if(find(root, tokens3)) {
-        printf("TRUE\n");
-    } else {
-        printf("FALSE\n");
-    }
-    if(find(root, tokens4)) {
-        printf("FALSE\n");
-    } else {
-        printf("TRUE\n");
-    }
-    if(find(root, tokens6)) {
-        printf("FALSE\n");
-    } else {
-        printf("TRUE\n");
-    }
-    if(find(root, tokens8)) {
-        printf("TRUE\n");
-    } else {
-        printf("FALSE\n");
-    }
-    if (!find(root, tokens9)) {
-        printf("TRUE\n");
-    } else {
-        printf("FALSE\n");
-    }
-}
+//     add_endpoint(root, tokens);
+//     add_endpoint(root, tokens2);
+//     add_endpoint(root, tokens5);
+//     add_endpoint(root, tokens7);
+//     printf("---------\n");
+//     if(find(root, tokens)) {
+//         printf("TRUE\n");
+//     } else {
+//         printf("FALSE\n");
+//     }
+//     if(find(root, tokens5)) {
+//         printf("FALSE\n");
+//     } else {
+//         printf("TRUE\n");
+//     }
+//     if(find(root, tokens3)) {
+//         printf("TRUE\n");
+//     } else {
+//         printf("FALSE\n");
+//     }
+//     if(find(root, tokens4)) {
+//         printf("FALSE\n");
+//     } else {
+//         printf("TRUE\n");
+//     }
+//     if(find(root, tokens6)) {
+//         printf("FALSE\n");
+//     } else {
+//         printf("TRUE\n");
+//     }
+//     if(find(root, tokens8)) {
+//         printf("TRUE\n");
+//     } else {
+//         printf("FALSE\n");
+//     }
+//     if (!find(root, tokens9)) {
+//         printf("TRUE\n");
+//     } else {
+//         printf("FALSE\n");
+//     }
+// }

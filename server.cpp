@@ -90,9 +90,9 @@ void logVisitor(std::string addr) {
 
 
 bool isUrlWhitelisted(trie_node_t *whitelist, std::string url) {
-    const char **tokens = tokenize_url(url.c_str());
+    const url_t *url_tokenized = tokenize_url(url.c_str());
     // todo lengtrh url
-    if(find(whitelist, tokens, 3)) {
+    if(find(whitelist, url_tokenized)) {
         return true;
     }
     return false; // TODO /!\ // use '*' for any file after some url token
@@ -107,8 +107,8 @@ trie_node_t *setWhitelist() {
     std::ifstream whitelist_file ("whitelist.lst");
     if (whitelist_file.is_open()) {
         while ( getline (whitelist_file,line) ) {
-            const char **tokens = tokenize_url(line.c_str());
-            add_endpoint(whitelist, tokens);
+            const url_t *url = tokenize_url(line.c_str());
+            add_endpoint(whitelist, url);
         }
         whitelist_file.close();
     }
