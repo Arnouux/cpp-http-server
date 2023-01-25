@@ -29,4 +29,4 @@ In `whitelist.lst`, 1 line per accepted url:
 + ./website/css/*
 + ./resources/**
 
-The above `whitelist.lst` will accept requests such as `website/html/x.html`, `website/html/y.css`, but not `website/html/other-folder/x.html`. It accepts any url starting with `resources/`
+The above `whitelist.lst` will accept requests such as `website/html/x.html`, `website/css/y.css`, but not `website/html/other-folder/x.html`. It accepts any url starting with `resources/`.

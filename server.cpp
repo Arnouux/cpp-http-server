@@ -10,16 +10,7 @@
 #include <regex>
 #include <map>
 #include <thread>
-
-#ifdef __cplusplus 
-extern "C" {
-#endif
-
-#include "trie_t.h"
-
-#ifdef __cplusplus 
-}
-#endif
+#include "whitelist.hpp"
 
 const char* file_visitors = "list_visitors.lst";
 const char* file_logs = "logs.lst";
@@ -88,32 +79,6 @@ void logVisitor(std::string addr) {
     rename(("tmp_" + std::string(file_visitors)).c_str(), file_visitors);
 }
 
-
-bool isUrlWhitelisted(trie_node_t *whitelist, std::string url) {
-    const url_t *url_tokenized = tokenize_url(url.c_str());
-    // todo lengtrh url
-    if(find(whitelist, url_tokenized)) {
-        return true;
-    }
-    return false; // TODO /!\ // use '*' for any file after some url token
-}
-
-trie_node_t *setWhitelist() {
-    // root
-    trie_node_t *whitelist = prepare_trie();
-
-    // endpoints
-    std::string line;
-    std::ifstream whitelist_file ("whitelist.lst");
-    if (whitelist_file.is_open()) {
-        while ( getline (whitelist_file,line) ) {
-            const url_t *url = tokenize_url(line.c_str());
-            add_endpoint(whitelist, url);
-        }
-        whitelist_file.close();
-    }
-    return whitelist;
-}
 
 std::vector<char> getDataWithHeader(int code, std::string path, std::string content_type) {
     size_t pos = path.find("%20");
@@ -209,7 +174,7 @@ void handleClient(SOCKET client, std::string path, std::string addr, trie_node_t
                 logVisitor(addr);
             }
 
-            if(! isUrlWhitelisted(whitelist, file_requested)) {
+            if(! Whitelist::isUrlWhitelisted(whitelist, file_requested)) {
                 std::vector<char> result = getDataWithHeader(401, "401.html", "text/html");
                 send(client, &result[0], result.size(), 0);
             }
@@ -244,7 +209,7 @@ int main(int argc, const char* argv[]) {
         service_type = ServiceType::SERVER;
     }
     std::cout << "Starting server for " << path << std::endl;
-    trie_node_t *whitelist = setWhitelist();
+    trie_node_t *whitelist = Whitelist::setWhitelist("whitelist.lst");
 
     // todo change if unix env (#DEFINE ?)
 	WSADATA wsa_data;
