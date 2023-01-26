@@ -16,7 +16,7 @@ Compile with the commands using:
 
 `gcc trie_t.c -c`
 
-`g++ server.cpp trie_t.o -o server.exe -lwsock32`
+`g++ server.cpp whitelist.cpp trie_t.o -o server.exe -lwsock32`
 
 Place the executable on your site folder and launch it, or use it as the proxy to connect to your application.
 
