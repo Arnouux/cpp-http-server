@@ -1,4 +1,5 @@
 #include <string>
+#include <vector>
 #ifndef WHITELIST_HPP
 #define WHITELIST_HPP
 
