@@ -2,11 +2,12 @@
 #include <fstream>
 #include <vector>
 #include <regex>
+#include <iostream>
 
 bool Whitelist::isUrlWhitelistedList(std::vector<std::string> whitelist, std::string url) {
     for(std::string u : whitelist) {
-    const std::regex regex = std::regex(u);
-        if(std::regex_search(url, regex)) {
+        const std::regex regex = std::regex(u);
+        if(std::regex_match(url, regex)) {
             return true;
         }
     }

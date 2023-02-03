@@ -1,7 +1,6 @@
 #include <iostream>
 #include <winsock2.h>
 #include <future>
-#include <iostream>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -109,8 +108,8 @@ std::vector<char> getDataWithHeader(int code, std::string path, std::string cont
     return result;
 }
 
-void handleClient(SOCKET client, std::string path, std::string addr, trie_node_t *whitelist) {
-    
+void handleClient(SOCKET client, std::string path, std::string addr, std::vector<std::string> whitelist) {
+    const clock_t begin_time = clock();
     time_t current_time  = std::time(0);
     if (current_time - last_time >= 60) {
         addresses.clear();
@@ -174,7 +173,7 @@ void handleClient(SOCKET client, std::string path, std::string addr, trie_node_t
                 logVisitor(addr);
             }
 
-            if(! Whitelist::isUrlWhitelisted(whitelist, file_requested)) {
+            if(! Whitelist::isUrlWhitelistedList(whitelist, file_requested)) {
                 std::vector<char> result = getDataWithHeader(401, "401.html", "text/html");
                 send(client, &result[0], result.size(), 0);
             }
@@ -193,6 +192,7 @@ void handleClient(SOCKET client, std::string path, std::string addr, trie_node_t
             send(client, &result[0], result.size(), 0);
         }
     }
+    std::cout << float( clock () - begin_time ) /  CLOCKS_PER_SEC << std::endl;
 }
 
 
@@ -209,7 +209,7 @@ int main(int argc, const char* argv[]) {
         service_type = ServiceType::SERVER;
     }
     std::cout << "Starting server for " << path << std::endl;
-    trie_node_t *whitelist = Whitelist::setWhitelist("whitelist.lst");
+    std::vector<std::string> whitelist = Whitelist::setWhitelistList("whitelist.lst");
 
     // todo change if unix env (#DEFINE ?)
 	WSADATA wsa_data;
